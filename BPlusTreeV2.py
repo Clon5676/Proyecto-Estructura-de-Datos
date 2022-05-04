@@ -175,7 +175,7 @@ def demo_bplustree():
     bplustree = BPlusTree(order=4)
 
     print('\nB+ tree with 1 item...')
-    bplustree.insert('71bd71j5pla9', '71bd71j5pla9')
+    bplustree.insert('71bd71j5plao9', '71bd71j5plao9')
     bplustree.show()
 
     print('\nB+ tree with 2 items...')
