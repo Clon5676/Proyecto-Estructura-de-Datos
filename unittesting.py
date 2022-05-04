@@ -1,4 +1,5 @@
 import unittest
+from BPlusTreeV2 import BPlusTree
 from main import SLinkedList, Node
 
 
@@ -68,6 +69,17 @@ class TestMain(unittest.TestCase):
         self.assertEqual(mod1.headval.nextval.dataval,['CAFE', 13,250])
         mod1.listmodify('CAFE','COFFEE',"Producto")
         self.assertEqual(mod1.headval.nextval.dataval,['COFFEE', 13,250])
+
+    def test_arbol(self):
+        arb = BPlusTree()
+        arb.insert("P","Prueba")
+        self.assertEqual(arb.retrieve('P'), ['Prueba'])
+        arb.insert("C","Compu")
+        self.assertEqual(arb.retrieve('C'), ['Compu'])
+        arb.insert("O","Oso")
+        self.assertEqual(arb.retrieve('O'), ['Oso'])
+        arb.insert("H","Hola")
+        self.assertEqual(arb.retrieve('H'), ['Hola'])
 
 
         
