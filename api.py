@@ -10,7 +10,7 @@ import BPlusTreeV2
 
 app = Flask(__name__)
 app.config["DEBUG"] = True 
-
+bplustree = BPlusTreeV2.BPlusTree(order=4)
 
 app.config["flask_profiler"] = {
     "enabled": app.config["DEBUG"],
