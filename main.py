@@ -291,7 +291,7 @@ class SLinkedList:
 def mayus(palabra):
   ''' convierte a mayuscula la palabra o  string dada'''
   nvp = palabra.upper()
-  return nv
+  return nvp
 
 
 def guardar():
