@@ -288,7 +288,7 @@ class SLinkedList:
 
 
 
-def mayus(palabra)
+def mayus(palabra):
   ''' convierte a mayuscula la palabra o  string dada'''
   nvp = palabra.upper()
   return nvp
