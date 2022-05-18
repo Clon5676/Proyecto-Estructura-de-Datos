@@ -179,15 +179,17 @@ def demo_bplustree():
     # bplustree.show()
 
     # print('\nB+ tree with 2 items...')
-    # bplustree.insert('1870fdjaka991kla9', '1870fdjaka991kla9')
+    bplustree.insert('hola', 'mundo')
     # bplustree.show()
 
     # print('\nB+ tree with 3 items...')
-    # bplustree.insert('7971987983618763ggd','7971987983618763ggd')
-    # bplustree.show()
+    bplustree.insert('hola','perros')
+    bplustree.insert('hola','gatos')
+    bplustree.insert('hol','amigos')
+    bplustree.show()
 
-    # print('\nRetrieving values with key e...')
-    # print(bplustree.retrieve('7971987983618763ggfd'))
+    print('\nRetrieving values with key hola...')
+    print(bplustree.retrieve('hola'))
 
 if __name__ == '__main__':
     # demo_node()
