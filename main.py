@@ -17,6 +17,33 @@ class Node:
       self.nextval = None
   cProfile.runctx("__init__", globals(), locals())
 
+
+
+class HashTable2:
+  def __init__(self,size):
+    self.size=size
+    self.hash_table=self.create_buckets()
+    self.keys = []
+
+  def create_buckets(self):
+    return [[]for _ in range(self.size)]
+
+  def set_val(seld, key, val):
+    hashed_key = hash(key) % self.size
+    bucket = self.hash_table[hashed_key]
+    found_key=False
+
+    for index in range(len(bucket)):
+      record = bucket[index]
+      record_key, record_val =record
+
+      if record_key == key:
+        found_key = True
+        break
+
+
+
+
 class SLinkedList:
   '''Define la linked list que utilizaremos para manejar nuestro inventario'''
   def __init__(self):#, save
