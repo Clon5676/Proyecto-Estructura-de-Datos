@@ -88,7 +88,7 @@ class SLinkedList:
     print(nodo.dataval)  
     
   def listmodify(self,producto,newval, columna):
-    '''Funcion para modificar un nuevo valor de cualquier "columna" que le digmaos del nodo'''
+    '''Funcion para modificar un nuevo valor de cualquier "columna" que le digamos del nodo'''
     nodo = self.headval
     productoList = None
     nrow = self.rows()

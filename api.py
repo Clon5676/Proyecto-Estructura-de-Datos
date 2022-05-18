@@ -5,22 +5,60 @@ import json
 import shortuuid
 from flask import Flask, render_template, request, flash, redirect, url_for
 #
-import flask_profiler
 import BPlusTreeV2
+import flask_profiler
+import sqlite3
+import threading
 
+from flask_cors import CORS, cross_origin
 app = Flask(__name__)
-app.config["DEBUG"] = True 
-bplustree = BPlusTreeV2.BPlusTree(order=4)
 
-app.config["flask_profiler"] = {
-    "enabled": app.config["DEBUG"],
-    "storage": {
-        "engine": "sqlite"
-    },
-    "ignore": [
-	"^/static/.*"
-	]
+
+app.config['SECRET_KEY'] = 'the quick brown fox jumps over the lazy   dog'
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+cors = CORS(app, resources={r"/foo": {"origins": "http://localhost:port"}})
+
+app.config["DEBUG"] = True 
+
+# Load the Treblle SDK to your Python app
+INSTALLEDD_APPS = [
+    'treblle',
+]
+ 
+# Enable the Treblle SDK middleware
+MIDDLEWARE_CLASSES = [
+    'treblle.middleware.TreblleMiddleware',
+]
+
+TREBLLE_INFO = {
+    'api_key': os.environ.get('ReyFLHEdcrU7iDNmgN0Zr4wllQMGgkqC'),
+    'project_id': os.environ.get('jGpVSR2BBcvYMrbA')
 }
+
+# app.config["flask_profiler"] = {
+#     "enabled": app.config["DEBUG"],
+#     "storage": {
+#         "engine": "sqlite"
+#     },
+#     "ignore": [
+# 	"^/static/.*"
+# 	]
+# }
+# app.config["flask_profiler"] = {
+#     "enabled": app.config["DEBUG"],
+#     "storage": {
+#         "engine": "sqlite"
+#     },
+#     "basicAuth":{
+#         "enabled": True,
+#         "username": "admin",
+#         "password": "admin"
+#     },
+#     "ignore": [
+# 	    "^/static/.*"
+# 	]
+# }
 
 #  "basicAuth":{
     #     "enabled": True,
@@ -28,24 +66,14 @@ app.config["flask_profiler"] = {
     #     "password": "admin"
     # },
 
-def ordenesJson():
-    '''Convierte el array multidimensional de ordenes a un diccionario o nested struct que nos permite enviarlo como JSON'''
-    #printOrdenes()
-    ordenesDict = {"ID":[],"NOMBRE":[],"CANTIDAD":[], "ESTADO":[], "TOTAL":[]};
-    #print('len(ordenes) ',len(ordenes))
-    for j in range(1, len(ordenes)):
-        for i in range(0,5):
-            #print(ordenes[j][i])
-            ordenesDict[list(ordenesDict)[i]].append(ordenes[j][i])
-    return(ordenesDict)
-
 def inventarioJson():
     '''Convierte el linked list de inventario a un diccionario o nested struct que nos permite enviarlo como JSON'''
     invDict = {"PRODUCTO":[],"PRECIO":[],"INVENTARIO":[]};
-    nodo = inventario.headval.nextval
+    nodo = inventario.headval
     while nodo is not None:
-        for i in range(0, len(nodo.dataval)):
-            invDict[list(invDict)[i]].append(nodo.dataval[i])
+        data = nodo.dataval
+        for i in range(0, len(data)):
+            invDict[list(invDict)[i]].append(data[i])
         nodo = nodo.nextval
     return(invDict)
     
@@ -54,16 +82,54 @@ def imprimirOrdenes():
     '''
     GET http://127.0.0.1:5000/ordenes
     Regresa el JSON conteniendo todas las ordenes'''
-    return jsonify(ordenesJson())
+    return jsonify(ordenes.get_table())
 
 # despachar ordenes
-@app.route('/ordenes/despachar', methods=['GET'])
+@app.route('/ordenes/despachar', methods=['PUT'])
 def despacharOrden():
+    global cadena
     if ordenesQueue.size() > 0:
-        mensaje = "La orden",ordenesQueue.get(), "ha sido despachada."
-        return jsonify({'message' : " ".join(mensaje)})
+        req = request.get_json(force=True)
+        orden = {'zonaorigen' : req['zonaorigen'], 'zonadestino' : req['zonadestino'],}
+        print(orden['zonaorigen'])
+        print('nani')
+        if orden['zonadestino'] not in set(ciudad.keys()):
+            return jsonify({'message' : "No contamos con ruta disponible para la zona de destino y zona de origen solicidada."})
+        else:
+            cadenaMensaje = cadena.find_shortest_path(start = orden['zonaorigen'], end = orden['zonadestino'])
+            cadenaMensaje = " ->> Zona: ".join(str(item) for item in cadenaMensaje)
+            return jsonify({
+            'ordenDespachada' : ordenesQueue.get(),
+            'rutaOptima': 'Zona: '+ cadenaMensaje
+            })
     else:
-        return jsonify({'message' : "No hay órdenes en la lista de espera de despacho."})
+        return jsonify({
+            'message' : "No hay órdenes en la lista de espera de despacho."
+            })
+
+@app.route('/rutas', methods=['GET'])
+def rutasAB():
+    global cadena
+    req = request.get_json(force=True)
+    orden = {'zonaorigen' : req['zonaorigen'], 'zonadestino' : req['zonadestino'],}
+    if orden['zonadestino'] not in set(ciudad.keys()):
+        return jsonify({'message' : "No contamos con ruta disponible para la zona de destino y zona de origen solicidada."})
+    else:
+        
+        # cadenaMensaje = cadena.find_shortest_path(start = orden['zonaorigen'], end = orden['zonadestino'])
+        # cadenaMensaje = " ->> Zona: ".join(str(item) for item in cadenaMensaje)
+        print(cadena.find_all_paths(start = orden['zonaorigen'], end = orden['zonadestino']))
+        return jsonify({
+        # 'ordenDespachada' : ordenesQueue.get(),
+        # 'rutaOptima': 'Zona: '+ cadenaMensaje
+        'rutas': cadena.find_all_paths(start = orden['zonaorigen'], end = orden['zonadestino'])
+        })
+
+
+@app.route('/ordenes/despachar/rutas', methods=['GET'])
+def rutas():
+    global ciudad
+    return jsonify(ciudad)
 
 # ordenes queue
 @app.route('/ordenes/queue', methods=['GET'])
@@ -87,20 +153,22 @@ def agregarOrden():
     "cantidad": 15
     }
     '''
-    idA = shortuuid.ShortUUID().random(length=10)
-    orden = {'NOMBRE' : request.json['nombre'],'CANTIDAD' : request.json['cantidad'],}
+    
+    idA = str(uuid.uuid4())
+    req = request.get_json(force=True)
+    orden = {'NOMBRE' : req['nombre'],'CANTIDAD' : req['cantidad'],}
     prodA = mayus(str(list(orden.values())[0]))
     totalA = int(list(orden.values())[1])
+    BPlusTreeV2.BPlusTree.insert(prodA, idA)
     productoInventario = inventario.listfind(prodA)
     if(productoInventario is not None):
         if(int(productoInventario[2])>=totalA):
             if not ordenesQueue.full():
                 total = totalA * float(productoInventario[1])
-                ordenes.append([j for j in [idA,prodA,totalA,"PENDIENTE",total]])
-                # valorPrueba=int(productoInventario[2]) - totalA
-                # #print(valorPrueba)
+                ordenes.set_val(idA, {'PRODUCTO':prodA, 'CANTIDAD': totalA, 'ESTADO':'PENDIENTE', 'TOTAL':total})
+                # ordenes.set_val(idA, {prodA, totalA, 'PENDIENTE', total})
+                print(ordenes)
                 inventario.listmodify(prodA,(int(productoInventario[2]) - totalA), 'Inventario')
-                guardar()
                 ordenesQueue.add(idA)
                 return jsonify({'message' : "Orden agregada exitosamente"})
             else:
@@ -111,7 +179,7 @@ def agregarOrden():
     else:
         return jsonify({'message' : "El producto que desea comprar no existe"})
     # ordenes.append([j for j in [orden,"PENDIENTE",0]])
-    
+    #    
 # realizar pago
 @app.route('/ordenes/pagar', methods=['PUT'])
 def pagar():
@@ -124,19 +192,19 @@ def pagar():
     "tarjeta": "1414"
     }
     Notese que el numero de tarjeta debe ser "1414", esto es para simular una respuesta de VISANET y si se manda un numero de tarjeta invalido el API de VISANET no permitiria realizar un pago'''
-    orden = {'ID' : request.json['id'],'TARJETA' : request.json['tarjeta'],}
+    req = request.get_json(force=True)
+    orden = {'ID' : req['id'],'TARJETA' : req['tarjeta'],}
     idR = str(list(orden.values())[0])
     tarjeta = str(list(orden.values())[1])
     if(tarjeta != '1414'):# SIMULACION DE RESPUESTA DE VISANET
         return(jsonify({'message' : "El metodo de pago no ha sido aceptado."}))
     g = 0
-    for k in range(0,len(ordenes)):
-        if ordenes[k][0]== idR:
-            ordenes[k][3]="PAGADA"
-            g = 1
-            guardar()
-            return(jsonify({"message" :"Orden pagada con exito"}))
-    if g==0:
+    values = list(ordenes.get_val(idR))
+    if values is not None:
+        values[2] = 'PAGADA'
+        ordenes.set_val(idR, values)
+        return(jsonify({"message" :"Orden pagada con exito"}))
+    else:
         return(jsonify({"message" : "La orden no ha sido encontrada"}))
 
 # anular orden
@@ -149,37 +217,37 @@ def anular():
     {
     "id":"DhjVjQwyJs"
     }'''
-    orden = {'ID' : request.json['id']}
+    req = request.get_json(force=True)
+    orden = {'ID' : req['id']}
     idR = str(list(orden.values())[0])
-    g = 0
-    for k in range(0,len(ordenes)):
-        if ordenes[k][0]== idR:
-            ordenes[k][3]="ANULADA"
-            g = 1
-            guardar()
-            return(jsonify({"message" :"Orden anulada con exito"}))
-    if g==0:
+    if ordenes.delete_val(idR):
+        ordenesQueue.anular(idR)
+        return(jsonify({"message" :"Orden eliminada con exito"}))
+    else:
         return(jsonify({"message" : "La orden no ha sido encontrada"}))
-
-# # eliminar ordenes, esta no sirve !
-# @app.route('/ordenes/eliminar', methods=['PUT'])
-# def eliminarAPi():
-#     orden = {'ID' : request.json['id']}
-#     idR = str(list(orden.values())[0])
-#     ordenes = eliminar(idR)
-#     # printOrdenes()
-#     return(jsonify({"message" :"El producto ha sido eliminado"}))
-#     # return(jsonify({"message" :"El producto no fue encontrado"}))  
 
 @app.route('/inventario', methods=['GET'])
 def inventarioimprimirAPI():
     '''
     GET http://127.0.0.1:5000/inventario
     Metodo GET que regresa el JSON conteniendo todos los nodos del inventario'''
+    print(inventarioJson())
     return jsonify(inventarioJson())
 
 
+@app.route('/inventario/buscar', methods=['GET'])
+def inventarioBuscarAPI():
+        '''permite buscar si existe el producto dado'''
+        req = request.get_json(force=True)
+        orden = {'PRODUCTO' : req['producto']}
+        producto = mayus(str(list(orden.values())[0]))
+        if(producto in set(inventarioJson()['PRODUCTO'])):
+            return(jsonify({"message" : "Este producto si existe en el inventario"}))
+        else:
+            return(jsonify({"message" : "Este producto no existe en el inventario"}))
+
 @app.route('/inventario/agregar', methods=['PUT'])
+@cross_origin(origin='localhost',headers=['Content- Type','Authorization'])
 def inventarioAgregrarAPI():
     '''API que permite agregar un NUEVO producto al inventario
     Metodo PUT que solicita un "producto", "precio" e "inventario",
@@ -191,21 +259,17 @@ def inventarioAgregrarAPI():
     "inventario": 220
     },
     Tome en cuenta que el API no permite agregar un producto que ya exista'''
-    orden = {'PRODUCTO' : request.json['producto'],'PRECIO' : request.json['precio'], 'INVENTARIO': request.json['inventario']}
+    req = request.get_json(force=True)
+    orden = {'PRODUCTO' : req['producto'],'PRECIO' : req['precio'], 'INVENTARIO': req['inventario']}
     producto = mayus(str(list(orden.values())[0]))
-    BPlusTreeV2.bplustree.insert(str(producto), str(producto))
-    BPlusTreeV2.bplustree.show()
     precio = float(list(orden.values())[1])
     inv = int(list(orden.values())[2])
     # if(inventario.listfind(producto) is not None):
-    if(BPlusTreeV2.bplustree.retrieve(producto) is not None):
+    if(producto in set(inventarioJson()['PRODUCTO'])):
         return(jsonify({"message" : "Este producto ya existe en el inventario, por favor verifique"}))
     else:
-        if(inventario.headval.nextval is None):
-            inventario.agregar([producto, precio, inv])
-        else:
-            inventario.agregar([producto, precio, inv])
-        return(jsonify({"message" : "Producto agregado con exito al inventario"}))
+        inventario.agregar([producto, precio, inv])
+    return(jsonify({"message" : "Producto agregado con exito al inventario"}))
 
 @app.route('/inventario/modificar', methods=['PUT'])
 def inventarioModificar():
@@ -217,7 +281,8 @@ def inventarioModificar():
     "producto" : "leche",
     "inventario": 100
     }'''
-    orden = {'PRODUCTO' : request.json['producto'],'INVENTARIO' : request.json['inventario']}
+    req = request.get_json(force=True)
+    orden = {'PRODUCTO' : req['producto'],'INVENTARIO' : req['inventario']}
     prodA = mayus(str(list(orden.values())[0]))
     inv = int(list(orden.values())[1])
     if(inv < 0):
@@ -225,10 +290,29 @@ def inventarioModificar():
     productoInventario = inventario.listfind(prodA)
     if(productoInventario is not None):
         inventario.listmodify(prodA,inv, 'Inventario')
-        guardar()
         return jsonify({'message' : "Nuevo inventario modificado exitosamente"})
     else:
         return jsonify({'message' : "El producto que desea modificar no existe"})
+
+@app.route('/inventario/borrar', methods=['PUT'])
+def inventarioBorrar():
+    '''API que permite borrar el  producto dado,
+    Metodo PUT que solicita un "producto" e "inventario"
+    Ejemplo:
+    PUT http://127.0.0.1:5000/inventario/borrar
+    {
+    "producto" : "leche"
+    
+    }'''
+    req = request.get_json(force=True)
+    orden = {'PRODUCTO' : req['producto']}
+    prodA = mayus(str(list(orden.values())[0]))
+    productoInventario = inventario.listfind(prodA)
+    if(productoInventario is not None):
+        inventario.listmodify(prodA,None,'Borrar')
+        return jsonify({'message' : "Inventario eliminado exitosamente"})
+    else:
+        return jsonify({'message' : "El producto que desea eliminar no existe"})
 
 @app.route('/inventario/descuento', methods=['PUT'])
 def inventarioDescuentos():
@@ -240,7 +324,8 @@ def inventarioDescuentos():
     "producto" : "leche",
     "descuento": 40
     }'''
-    orden = {'PRODUCTO' : request.json['producto'],'DESCUENTO' : request.json['descuento']}
+    req = request.get_json(force=True)
+    orden = {'PRODUCTO' : req['producto'],'DESCUENTO' : req['descuento']}
     prodA = mayus(str(list(orden.values())[0]))
     descuento = float(list(orden.values())[1])
     if(descuento > 100):
@@ -248,18 +333,13 @@ def inventarioDescuentos():
     productoInventario = inventario.listfind(prodA)
     if(productoInventario is not None):
         inventario.listmodify(prodA,float(productoInventario[1]) - (float(productoInventario[1]) * float(descuento)/100), 'Precio')
-        guardar()
         return jsonify({'message' : "Descuento aplicado exitosamente"})
     else:
         return jsonify({'message' : "El producto que desea aplicar el descuento no existe"})
-
-
-flask_profiler.init_app(app)
-
 
 @app.route("/docs")
 def docs():
     return render_template('api.html')
 
 if __name__ == '__main__':
-	app.run(debug=True)
+	app.run(host="127.0.0.1", port=5000)
