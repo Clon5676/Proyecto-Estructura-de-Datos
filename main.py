@@ -7,8 +7,12 @@ import json
 import cProfile
 from flask import jsonify
 from hashtable import HashTable
-# from Queue import Queue
-# from grafo import *
+from Queue import Queue
+from grafo import *
+import cProfile
+# import re
+
+
 
 class Node:
   '''Define el Nodo que utilizaremos en la linked list del inventario'''
@@ -117,5 +121,6 @@ def mayus(palabra):
 
 # inventario = SLinkedList()
 inventario = HashTable(size=50)
-# ordenesQueue = Queue(maxsize=6)
+ordenesQueue = Queue(maxsize=6)
 ordenes = HashTable(size = 50)
+cProfile.run('re.compile("foo|bar")')

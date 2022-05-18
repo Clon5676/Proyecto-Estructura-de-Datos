@@ -4,6 +4,7 @@ import unittest
 from BPlusTreeV2 import BPlusTree
 from main import SLinkedList, Node
 from MaxHeap import MaxHeap
+from hashtable import HashTable
 
 
 
@@ -51,6 +52,24 @@ class TestMain(unittest.TestCase):
         self.assertEqual(ins1.size,2)
         ins1.insert({'ID': 'id90','TOTAL': 32})
         self.assertEqual(ins1.size,3)
+    
+    def test_delete(self):
+        del1 = MaxHeap(9)
+        del1.insert({'ID': 'id3','TOTAL': 10})
+        del1.delete ('id3')
+        self.assertEqual(del1.size,0)
+
+        del1.insert({'ID': 'id5','TOTAL': 4})
+        del1.insert({'ID': 'id13','TOTAL': 7})
+        del1.insert({'ID': 'id7','TOTAL': 18})
+        del1.insert({'ID': 'id6','TOTAL': 25})
+        del1.delete ('id5')
+        self.assertEqual(del1.size,3)
+
+    def test_setVal(self):
+        set1=HashTable()
+        set1.set_val('ejemplo@example.com', 'some other value')
+        self.assertEqual(set1[0],'ejemplo@example.com')
 
         
         
