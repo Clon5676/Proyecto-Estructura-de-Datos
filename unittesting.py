@@ -1,10 +1,59 @@
+from turtle import pos
+from typing import Hashable
 import unittest
 from BPlusTreeV2 import BPlusTree
 from main import SLinkedList, Node
+from MaxHeap import MaxHeap
+
 
 
 
 class TestMain(unittest.TestCase):
+
+    def test_parent(self):
+        parent1 = MaxHeap(9)
+        parent1.parent(6)
+        self.assertEqual(parent1.parent(6), 6//2 )
+        parent1.parent(71)
+        self.assertEqual(parent1.parent(71), 71//2 )
+        parent1.parent(39)
+        self.assertEqual(parent1.parent(39), 39//2 )
+        parent1.parent(8)
+        self.assertEqual(parent1.parent(8), 8//2 )
+
+    def test_leftChild(self):
+        parent1 = MaxHeap(9)
+        parent1.leftChild(9)
+        self.assertEqual(parent1.leftChild(9), 9*2 )
+        parent1.leftChild(15)
+        self.assertEqual(parent1.leftChild(15), 15*2 )
+        parent1.leftChild(2)
+        self.assertEqual(parent1.leftChild(2), 2*2 )
+        parent1.leftChild(-4)
+        self.assertEqual(parent1.leftChild(-4), -4*2 )
+
+    def test_rightChild(self):
+        child1 = MaxHeap(9)
+        child1.rightChild(4)
+        self.assertEqual(child1.rightChild(4), (4*2)+1 )
+        child1.rightChild(8)
+        self.assertEqual(child1.rightChild(8), (8*2)+1 )
+        child1.rightChild(27)
+        self.assertEqual(child1.rightChild(27), (27*2)+1 )
+        child1.rightChild(-2)
+        self.assertEqual(child1.rightChild(-2), (-2*2)+1 )
+
+    def test_insert(self):
+        ins1=MaxHeap(9)
+        ins1.insert({'ID': 'id3','TOTAL': 10})
+        self.assertEqual(ins1.size,1)
+        ins1.insert({'ID': 'id8','TOTAL': 80})
+        self.assertEqual(ins1.size,2)
+        ins1.insert({'ID': 'id90','TOTAL': 32})
+        self.assertEqual(ins1.size,3)
+
+        
+        
     # def test_agregar(self):
     #     agregar1 = SLinkedList(save = False)
     #     agregar1.agregar("TestString")

@@ -150,48 +150,34 @@ class BPlusTree(object):
         """Prints the keys at each level."""
         self.root.show()
 
-# def demo_node():
-#     print('Initializing node...')
-#     node = Node(order=4)
-
-#     print('\nInserting key a...')
-#     node.add('a', 'alpha')
-#     print('Is node full?', node.is_full())
-#     node.show()
-
-#     print('\nInserting keys b, c, d...')
-#     node.add('b', 'bravo')
-#     node.add('c', 'charlie'
-#     node.add('d', 'delta')
-#     print('Is node full?', node.is_full())
-#     node.show()
-
-#     print('\nSplitting node...')
-#     node.split()
-#     node.show()
-
 def demo_bplustree():
-    print('Initializing B+ tree...')
+    print('B+ Tree:')
     bplustree = BPlusTree(order=4)
+    bplustree.insert('Juan', 'AGUA')
+    bplustree.insert('Juan','TOMATE')
+    bplustree.insert('Juan','BROCOLI')
+    
+    bplustree.insert('Manuel', 'VINO')
+    bplustree.insert('Maria','JAMON')
+    bplustree.insert('Maria','ARROZ')
 
-    # print('\nB+ tree with 1 item...')
-    # bplustree.insert('71bd71j5plao9', '71bd71j5plao9')
-    # bplustree.show()
+    bplustree.insert('Pedro','AGUA')
+    bplustree.insert('Ernesto','CEBOLLA')
+    
+    
+    
 
-    # print('\nB+ tree with 2 items...')
-    bplustree.insert('hola', 'mundo')
-    # bplustree.show()
-
-    # print('\nB+ tree with 3 items...')
-    bplustree.insert('hola','perros')
-    bplustree.insert('hola','gatos')
-    bplustree.insert('hol','amigos')
     bplustree.show()
 
-    print('\nRetrieving values with key hola...')
-    print(bplustree.retrieve('hola'))
+    print('\nJuan compro:')
+    print(bplustree.retrieve('Juan'))
+    print('\nManuel compro:')
+    print(bplustree.retrieve('Manuel'))
+
+    print('\nMaria compro:')
+    print(bplustree.retrieve('Maria'))
 
 if __name__ == '__main__':
-    # demo_node()
+   
     print('\n')
     demo_bplustree()
